@@ -3,13 +3,10 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>BUNKER CONNECT - Ultimate P2P</title>
+    <title>BUNKER CONNECT - Discord Companion</title>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700;900&family=Share+Tech+Mono&display=swap" rel="stylesheet">
     
-    <!-- Перейшли на Torrent-трекери для надійного з'єднання в обхід блокувальників -->
-    <script src="https://cdn.jsdelivr.net/npm/trystero/dist/trystero-torrent.min.js"></script>
-
     <style>
         :root {
             --bg-dark: #0d0f12;
@@ -23,12 +20,7 @@
             --danger-red: #e74c3c;
         }
 
-        * {
-            box-sizing: border-box;
-            margin: 0;
-            padding: 0;
-            user-select: none;
-        }
+        * { box-sizing: border-box; margin: 0; padding: 0; user-select: none; }
 
         body {
             background-color: var(--bg-dark);
@@ -60,252 +52,268 @@
         }
 
         .pepe-avatar {
-            width: 44px;
-            height: 44px;
-            border-radius: 50%;
-            border: 2px solid var(--accent-green);
-            background: #111;
-            object-fit: cover;
+            width: 44px; height: 44px; border-radius: 50%;
+            border: 2px solid var(--accent-green); background: #111; object-fit: cover;
         }
 
         .auth-container {
-            max-width: 450px;
-            margin: 80px auto;
-            padding: 32px;
-            background: var(--panel-bg);
-            border: 1px solid var(--border-color);
-            border-radius: 8px;
-            text-align: center;
-            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.6);
+            max-width: 450px; margin: 80px auto; padding: 32px;
+            background: var(--panel-bg); border: 1px solid var(--border-color);
+            border-radius: 8px; text-align: center; box-shadow: 0 8px 32px rgba(0, 0, 0, 0.6);
         }
 
-        .auth-container h2 {
-            font-family: 'Orbitron', sans-serif;
-            color: var(--accent-green);
-            margin-bottom: 8px;
-        }
-
-        .input-group {
-            margin: 20px 0;
-            text-align: left;
-        }
-
-        .input-group label {
-            display: block;
-            margin-bottom: 6px;
-            color: var(--text-gold);
-            font-size: 0.9rem;
-        }
-
-        .input-group input {
-            width: 100%;
-            padding: 12px;
-            background: #090a0c;
-            border: 1px solid var(--border-color);
-            color: #fff;
-            border-radius: 4px;
-            font-family: inherit;
-        }
+        .auth-container h2 { font-family: 'Orbitron', sans-serif; color: var(--accent-green); margin-bottom: 8px; }
+        .input-group { margin: 20px 0; text-align: left; }
+        .input-group label { display: block; margin-bottom: 6px; color: var(--text-gold); font-size: 0.9rem; }
+        .input-group input { width: 100%; padding: 12px; background: #090a0c; border: 1px solid var(--border-color); color: #fff; border-radius: 4px; font-family: inherit; }
 
         .btn {
-            background: var(--accent-green-dim);
-            color: #fff;
-            border: 1px solid var(--accent-green);
-            padding: 12px 24px;
-            font-family: 'Orbitron', sans-serif;
-            font-weight: bold;
-            cursor: pointer;
-            transition: all 0.2s;
-            border-radius: 4px;
-            width: 100%;
-            margin-top: 8px;
+            background: var(--accent-green-dim); color: #fff; border: 1px solid var(--accent-green);
+            padding: 12px 24px; font-family: 'Orbitron', sans-serif; font-weight: bold;
+            cursor: pointer; transition: all 0.2s; border-radius: 4px; width: 100%; margin-top: 8px;
         }
+        .btn:hover { background: var(--accent-green); color: #000; }
+        .btn-purple { background: #4a148c; border-color: var(--accent-purple); }
+        .btn-purple:hover { background: var(--accent-purple); color: #fff; }
+        .btn-small { padding: 6px 12px; font-size: 0.8rem; width: auto; margin-top: 6px; }
+        .btn-disabled { background: #333 !important; border-color: #555 !important; color: #777 !important; cursor: not-allowed; }
 
-        .btn:hover {
-            background: var(--accent-green);
-            color: #000;
-        }
-
-        .btn-purple {
-            background: #4a148c;
-            border-color: var(--accent-purple);
-        }
-        .btn-purple:hover {
-            background: var(--accent-purple);
-            color: #fff;
-        }
-
-        .btn-small {
-            padding: 6px 12px;
-            font-size: 0.8rem;
-            width: auto;
-            margin-top: 6px;
-        }
-
-        .btn-disabled {
-            background: #333 !important;
-            border-color: #555 !important;
-            color: #777 !important;
-            cursor: not-allowed;
-        }
-
-        .game-layout {
-            display: none;
-            flex-direction: column;
-            padding: 20px;
-            gap: 20px;
-            max-width: 1600px;
-            margin: 0 auto;
-            width: 100%;
-        }
+        .game-layout { display: none; flex-direction: column; padding: 20px; gap: 20px; max-width: 1000px; margin: 0 auto; width: 100%; }
 
         .scenario-banner {
-            background: var(--panel-bg);
-            border-left: 4px solid var(--text-gold);
-            padding: 16px;
-            border-radius: 4px;
-            font-size: 0.95rem;
-            line-height: 1.4;
-        }
-
-        .action-log {
-            background: rgba(0,0,0,0.4);
-            border: 1px solid var(--border-color);
-            padding: 8px 12px;
-            border-radius: 4px;
-            color: var(--text-gold);
-            font-size: 0.85rem;
-            min-height: 28px;
-        }
-
-        .video-grid {
-            display: grid;
-            grid-template-columns: repeat(auto-fill, minmax(360px, 1fr));
-            gap: 20px;
+            background: var(--panel-bg); border-left: 4px solid var(--text-gold);
+            padding: 16px; border-radius: 4px; font-size: 0.95rem; line-height: 1.4;
         }
 
         .player-card {
-            position: relative;
-            background: #000;
-            border: 2px solid var(--border-color);
-            border-radius: 8px;
-            aspect-ratio: 16 / 9;
-            overflow: hidden;
-            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.4);
+            position: relative; background: #000; border: 2px solid var(--border-color);
+            border-radius: 8px; aspect-ratio: 16 / 9; overflow: hidden; box-shadow: 0 4px 12px rgba(0, 0, 0, 0.4);
+            max-width: 800px; margin: 0 auto; width: 100%;
         }
 
-        .player-video {
-            width: 100%;
-            height: 100%;
-            object-fit: cover;
-        }
-
+        .player-video { width: 100%; height: 100%; object-fit: cover; }
+        
         .video-placeholder {
-            position: absolute;
-            inset: 0;
-            background: #0a0c0e;
-            display: flex;
-            flex-direction: column;
-            justify-content: center;
-            align-items: center;
-            color: #4a5568;
+            position: absolute; inset: 0; background: #0a0c0e; display: flex; flex-direction: column;
+            justify-content: center; align-items: center; color: #4a5568;
         }
 
         .hud-overlay {
-            position: absolute;
-            inset: 0;
-            pointer-events: none;
-            padding: 10px;
-            display: flex;
-            flex-direction: column;
-            justify-content: space-between;
-            z-index: 2;
+            position: absolute; inset: 0; pointer-events: none; padding: 16px;
+            display: flex; flex-direction: column; justify-content: space-between; z-index: 2;
         }
 
         .hud-top {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            font-family: 'Orbitron', sans-serif;
-            font-size: 0.9rem;
-            font-weight: bold;
-            color: #fff;
-            text-shadow: 0 0 4px #000, 1px 1px 2px #000;
+            display: flex; justify-content: space-between; align-items: center;
+            font-family: 'Orbitron', sans-serif; font-size: 1.1rem; font-weight: bold; color: #fff;
+            text-shadow: 0 0 6px #000, 2px 2px 4px #000;
         }
 
         .hud-bottom {
-            font-size: 0.75rem;
-            line-height: 1.2;
-            color: var(--accent-green);
-            text-shadow: 0 0 4px #000, 1px 1px 2px #000;
-            display: flex;
-            flex-direction: column;
-            gap: 2px;
-        }
-
-        .hud-line {
-            white-space: nowrap;
-            overflow: hidden;
-            text-overflow: ellipsis;
+            font-size: 0.9rem; line-height: 1.4; color: var(--accent-green);
+            text-shadow: 0 0 6px #000, 2px 2px 4px #000; display: flex; flex-direction: column; gap: 4px;
         }
 
         .my-controls {
-            background: var(--panel-bg);
-            border: 1px solid var(--border-color);
-            padding: 16px;
-            border-radius: 8px;
-            display: flex;
-            flex-wrap: wrap;
-            gap: 12px;
-            align-items: center;
-            justify-content: space-between;
+            background: var(--panel-bg); border: 1px solid var(--border-color);
+            padding: 16px; border-radius: 8px; display: flex; flex-wrap: wrap; gap: 12px;
+            align-items: center; justify-content: space-between;
         }
 
-        .trait-buttons {
-            display: flex;
-            flex-wrap: wrap;
-            gap: 8px;
-        }
-
+        .trait-buttons { display: flex; flex-wrap: wrap; gap: 8px; }
         .trait-btn {
-            background: #1f242d;
-            border: 1px solid var(--border-color);
-            color: #a0aec0;
-            padding: 6px 12px;
-            font-size: 0.8rem;
-            cursor: pointer;
-            border-radius: 4px;
+            background: #1f242d; border: 1px solid var(--border-color); color: #a0aec0;
+            padding: 8px 16px; font-size: 0.85rem; cursor: pointer; border-radius: 4px;
+        }
+        .trait-btn.revealed { border-color: var(--accent-green); color: var(--accent-green); }
+
+        .modal { display: none; position: fixed; inset: 0; background: rgba(0, 0, 0, 0.8); justify-content: center; align-items: center; z-index: 1000; }
+        .modal-content { background: var(--panel-bg); border: 2px solid var(--accent-purple); padding: 24px; border-radius: 8px; max-width: 520px; width: 90%; }
+        .action-card { background: #090a0c; border: 1px dashed var(--accent-purple); padding: 12px; margin: 10px 0; border-radius: 4px; display: flex; flex-direction: column; gap: 6px; }
+    </style>
+</head>
+<body>
+
+    <header>
+        <div class="brand-logo">
+            <img src="https://i.imgur.com/8Q9Z5YK.png" alt="Pepe" class="pepe-avatar" onerror="this.src='https://i.ibb.co/C03H42Y/pepe.png'">
+            <span>BUNKER TERMINAL</span>
+        </div>
+        <div id="room-info" style="color: var(--text-gold);">Локальна Сесія</div>
+    </header>
+
+    <div id="auth-screen" class="auth-container">
+        <h2>ВХІД У ТЕРМІНАЛ</h2>
+        <div class="input-group">
+            <label>Ваше Ім'я / Позивний</label>
+            <input type="text" id="username-input" placeholder="Введіть нікнейм">
+        </div>
+        <button class="btn" onclick="joinRoom()">Генерувати Персонажа</button>
+    </div>
+
+    <div id="game-screen" class="game-layout">
+        <div class="scenario-banner">
+            <strong>СЦЕНАРІЙ:</strong> Ядерна зима. Радіаційний фон підвищений. Поверхня непридатна для життя на 10 років.<br>
+            <strong>БУНКЕР:</strong> Розрахований на 4 особи. Обладнаний гідропонікою та фільтрами води.
+        </div>
+
+        <div class="my-controls">
+            <div>
+                <button class="btn" style="width: auto;" onclick="toggleCamera()"><i class="fa-solid fa-video"></i> Увімкнути Камеру</button>
+                <button class="btn btn-purple" style="width: auto;" onclick="openActionModal()"><i class="fa-solid fa-id-card"></i> Мої Карти Дії (<span id="cards-count">2</span>)</button>
+            </div>
+            <div class="trait-buttons" id="reveal-buttons-panel"></div>
+        </div>
+
+        <div id="my-card-container"></div>
+    </div>
+
+    <div id="action-modal" class="modal">
+        <div class="modal-content">
+            <h3 style="color: var(--accent-purple); margin-bottom: 12px;">Ваші Карти Дії</h3>
+            <div id="action-cards-list"></div>
+            <button class="btn" onclick="closeActionModal()" style="margin-top: 10px;">Закрити</button>
+        </div>
+    </div>
+
+    <script>
+        let currentUsername = localStorage.getItem("bunker_name") || "";
+        let isCameraOn = false;
+        let localStream = null;
+        let myProfile = null;
+
+        const PROFESSIONS = ["Лікар", "Інженер", "Військовий", "Агроном", "Електрик", "Програміст", "Кухар", "Будівельник", "Поліцейський"];
+        const HEALTHS = ["Ідеально здоровий", "Астма (легка)", "Короткозорість", "Безпліддя", "Травма коліна", "Гастрит"];
+        const HOBBIES = ["Шахи", "Малювання", "Стрільба з лука", "Радіотехніка", "Вокал", "Кулінарія", "Полювання"];
+        const PHOBIAS = ["Клаустрофобія", "Темрява", "Агорафобія", "Гермофобія", "Арахнофобія", "Гідрофобія"];
+        const LUGGAGE = ["Набір інструментів", "Аптечка", "Рація", "Запас консервів", "Палатка", "Спальний мішок", "Гітара"];
+        const FACTS = [
+            "Має досвід виживання у лісі", "Знає як фільтрувати воду", "Служив у ДСНС", 
+            "Уміє керувати вантажівкою", "Склав свій генератор", "Вміє надавати першу допомогу", 
+            "Знімався в кіно"
+        ];
+        const ACTION_CARDS = [
+            { title: "Переголосування", desc: "Анулює підсумки поточного голосування." },
+            { title: "Обмін багажем", desc: "Поміняйтеся багажем з будь-яким вибраним гравцем." },
+            { title: "Крадіжка багажу", desc: "Заберіть багаж іншого гравця собі." },
+            { title: "Імунітет від вигнання", desc: "Дає повний захист від вигнання у цьому раунді." },
+            { title: "Чудодійне лікування", desc: "Повністю змінює вашу карту здоров'я на «Ідеально здоровий»." }
+        ];
+
+        function getRandomTwoFacts() {
+            let shuffled = [...FACTS].sort(() => 0.5 - Math.random());
+            return [shuffled[0], shuffled[1]];
+        }
+        function getRandomActionCards() {
+            let shuffled = [...ACTION_CARDS].sort(() => 0.5 - Math.random());
+            return [{ ...shuffled[0], used: false }, { ...shuffled[1], used: false }];
         }
 
-        .trait-btn.revealed {
-            border-color: var(--accent-green);
-            color: var(--accent-green);
+        function generateOrLoadProfile() {
+            let saved = sessionStorage.getItem("bunker_char_local");
+            if (saved) {
+                myProfile = JSON.parse(saved);
+            } else {
+                myProfile = {
+                    profession: PROFESSIONS[Math.floor(Math.random() * PROFESSIONS.length)],
+                    health: HEALTHS[Math.floor(Math.random() * HEALTHS.length)],
+                    hobby: HOBBIES[Math.floor(Math.random() * HOBBIES.length)],
+                    phobia: PHOBIAS[Math.floor(Math.random() * PHOBIAS.length)],
+                    luggage: LUGGAGE[Math.floor(Math.random() * LUGGAGE.length)],
+                    fact1: getRandomTwoFacts()[0],
+                    fact2: getRandomTwoFacts()[1],
+                    actions: getRandomActionCards(),
+                    revealed: { profession: true, health: false, hobby: false, phobia: false, luggage: false, fact1: false, fact2: false }
+                };
+                sessionStorage.setItem("bunker_char_local", JSON.stringify(myProfile));
+            }
         }
 
-        .modal {
-            display: none;
-            position: fixed;
-            inset: 0;
-            background: rgba(0, 0, 0, 0.8);
-            justify-content: center;
-            align-items: center;
-            z-index: 1000;
+        function joinRoom() {
+            let name = document.getElementById("username-input").value.trim();
+            if (!name) return alert("Введіть ваше ім'я!");
+            currentUsername = name;
+            localStorage.setItem("bunker_name", currentUsername);
+            
+            generateOrLoadProfile();
+            
+            document.getElementById("auth-screen").style.display = "none";
+            document.getElementById("game-screen").style.display = "flex";
+            
+            updateCardsCount();
+            renderRevealButtons();
+            renderMyCard();
         }
 
-        .modal-content {
-            background: var(--panel-bg);
-            border: 2px solid var(--accent-purple);
-            padding: 24px;
-            border-radius: 8px;
-            max-width: 520px;
-            width: 90%;
+        function renderRevealButtons() {
+            const panel = document.getElementById("reveal-buttons-panel");
+            panel.innerHTML = "";
+            const keys = [
+                { key: 'health', label: "Здоров'я" }, { key: 'hobby', label: "Хобі" },
+                { key: 'phobia', label: "Фобія" }, { key: 'luggage', label: "Багаж" },
+                { key: 'fact1', label: "Факт 1" }, { key: 'fact2', label: "Факт 2" }
+            ];
+
+            keys.forEach(item => {
+                let isRev = myProfile.revealed[item.key];
+                let btn = document.createElement("button");
+                btn.className = "trait-btn " + (isRev ? "revealed" : "");
+                btn.innerText = (isRev ? "✓ " : "Відкрити ") + item.label;
+                btn.onclick = () => {
+                    myProfile.revealed[item.key] = true;
+                    sessionStorage.setItem("bunker_char_local", JSON.stringify(myProfile));
+                    renderRevealButtons();
+                    renderMyCard();
+                };
+                panel.appendChild(btn);
+            });
         }
 
-        .action-card {
-            background: #090a0c;
-            border: 1px dashed var(--accent-purple);
-            padding: 12px;
-            margin: 10px 0;
-            border-radius: 4px;
-            display: flex;
-            flex-direction:
+        function useActionCard(index) {
+            let card = myProfile.actions[index];
+            if (card.used) return;
+
+            if (confirm(`Використати карту "${card.title}"? Озвучте це іншим гравцям у Discord!`)) {
+                card.used = true;
+                if (card.title === "Чудодійне лікування") myProfile.health = "Ідеально здоровий";
+                sessionStorage.setItem("bunker_char_local", JSON.stringify(myProfile));
+                updateCardsCount();
+                openActionModal();
+                renderMyCard();
+            }
+        }
+
+        function updateCardsCount() {
+            document.getElementById("cards-count").innerText = myProfile.actions.filter(a => !a.used).length;
+        }
+
+        function renderMyCard() {
+            const container = document.getElementById("my-card-container");
+            container.innerHTML = "";
+            let rev = myProfile.revealed;
+            
+            const getTrait = (key) => rev[key] ? myProfile[key] : `[Приховано: ${myProfile[key]}]`;
+
+            let card = document.createElement("div");
+            card.className = "player-card";
+            card.innerHTML = `
+                <video id="my-vid" class="player-video" autoplay playsinline muted style="display: ${isCameraOn ? 'block' : 'none'};"></video>
+                <div class="video-placeholder" style="display: ${isCameraOn ? 'none' : 'flex'};">
+                    <i class="fa-solid fa-user-ninja fa-4x" style="margin-bottom: 12px;"></i>
+                    <span style="font-size: 1.5rem;">${currentUsername}</span>
+                </div>
+                <div class="hud-overlay">
+                    <div class="hud-top">
+                        <span>${currentUsername}</span>
+                        <span>${myProfile.profession}</span>
+                    </div>
+                    <div class="hud-bottom">
+                        <div class="hud-line" style="color: ${rev.health ? 'var(--accent-green)' : '#718096'}">Здоров'я: ${getTrait('health')}</div>
+                        <div class="hud-line" style="color: ${rev.hobby ? 'var(--accent-green)' : '#718096'}">Хобі: ${getTrait('hobby')}</div>
+                        <div class="hud-line" style="color: ${rev.phobia ? 'var(--accent-green)' : '#718096'}">Фобія: ${getTrait('phobia')}</div>
+                        <div class="hud-line" style="color: ${rev.luggage ? 'var(--accent-green)' : '#718096'}">Багаж: ${getTrait('luggage')}</div>
+                        <div class="hud-line" style="color: ${rev.fact1 ? 'var(--accent-green)' : '#718096'}">Факт 1: ${getTrait('fact1')}</div>
+                        <div class="hud-line" style="color: ${rev.fact2 ? 'var(--accent-green)' : '#718096'}">Факт 2: ${getTrait('fact2')}</div>
+                    </div>
+                </div>
+            `;
