@@ -1,0 +1,874 @@
+<!DOCTYPE html>
+<html lang="uk">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>BUNKER CONNECT - Pepe Vault Edition</title>
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- FontAwesome Icons -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <!-- Google Fonts -->
+    <link href="https://fonts.googleapis.com/css2?family=Share+Tech+Mono&family=Teko:wght@500;600;700&family=VT323&family=Inter:wght@400;600;700&display=swap" rel="stylesheet">
+
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        vaultgreen: '#34d399',
+                        vaultdarkgreen: '#064e3b',
+                        vaultamber: '#f59e0b',
+                        vaultpurple: '#c084fc',
+                        vaultbg: '#080b08',
+                        vaultcard: '#121612',
+                        vaultborder: '#1f2923'
+                    },
+                    fontFamily: {
+                        mono: ['"Share Tech Mono"', 'monospace'],
+                        header: ['Teko', 'sans-serif'],
+                        pipboy: ['VT323', 'monospace'],
+                        sans: ['Inter', 'sans-serif']
+                    }
+                }
+            }
+        }
+    </script>
+
+    <style>
+        body {
+            background-color: #080b08;
+            color: #d1d5db;
+            font-family: 'Inter', sans-serif;
+            background-image: 
+                radial-gradient(circle at 50% 0%, rgba(52, 211, 153, 0.05) 0%, transparent 60%),
+                radial-gradient(circle at 50% 100%, rgba(192, 132, 252, 0.03) 0%, transparent 50%),
+                linear-gradient(rgba(8, 11, 8, 0.97), rgba(5, 7, 5, 0.99));
+            background-attachment: fixed;
+        }
+
+        .font-header { font-family: 'Teko', sans-serif; letter-spacing: 1px; }
+        .font-mono-tech { font-family: '"Share Tech Mono"', monospace; }
+
+        .camera-slot-frame {
+            position: relative;
+            background: #0d120d;
+            border: 2px solid #1f2923;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.5);
+            border-radius: 8px;
+            overflow: hidden;
+            aspect-ratio: 16 / 10;
+            display: flex;
+            flex-direction: column;
+            justify-content: space-between;
+            transition: all 0.2s ease;
+        }
+
+        .camera-slot-frame:hover {
+            border-color: #34d399;
+            box-shadow: 0 0 12px rgba(52, 211, 153, 0.15);
+        }
+
+        .camera-video {
+            position: absolute;
+            inset: 0;
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+            transform: scaleX(-1);
+            z-index: 1;
+        }
+
+        /* DIRECT TEXT OVERLAY WITHOUT ANY DARK BACKGROUND TINT */
+        .hud-top-clean, .hud-bottom-clean {
+            position: relative;
+            z-index: 10;
+            padding: 4px 6px;
+            pointer-events: none;
+        }
+        
+        .hud-top-clean {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .hud-bottom-clean {
+            font-size: 11px;
+            line-height: 1.25;
+        }
+
+        /* Text glow shadow for clean video readability without background boxes */
+        .hud-text-glow {
+            color: #34d399;
+            font-weight: 700;
+            text-shadow: 0 0 3px #000, 1px 1px 2px #000, -1px -1px 2px #000, 1px -1px 2px #000, -1px 1px 2px #000;
+        }
+
+        .hud-text-white {
+            color: #ffffff;
+            text-shadow: 0 0 3px #000, 1px 1px 2px #000, -1px -1px 2px #000, 1px -1px 2px #000, -1px 1px 2px #000;
+        }
+
+        .hud-text-hidden {
+            color: #9ca3af;
+            font-style: italic;
+            text-shadow: 0 0 3px #000, 1px 1px 2px #000, -1px -1px 2px #000;
+        }
+
+        .hud-text-purple {
+            color: #c084fc;
+            font-weight: 700;
+            text-shadow: 0 0 3px #000, 1px 1px 2px #000, -1px -1px 2px #000;
+        }
+
+        /* Exiled Stamp Overlay */
+        .exiled-stamp {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%) rotate(-12deg);
+            color: #ef4444;
+            border: 3px solid #ef4444;
+            padding: 2px 16px;
+            font-family: 'Teko', sans-serif;
+            font-size: 2.8rem;
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: 3px;
+            text-shadow: 0 0 10px rgba(239, 68, 68, 0.8);
+            box-shadow: 0 0 15px rgba(239, 68, 68, 0.5);
+            pointer-events: none;
+            z-index: 30;
+            background: rgba(12, 4, 4, 0.92);
+            border-radius: 4px;
+            white-space: nowrap;
+        }
+
+        /* Vault Standby / No-Camera Background */
+        .static-noise {
+            position: absolute;
+            inset: 0;
+            background: radial-gradient(circle, rgba(52, 211, 153, 0.05) 0%, rgba(8, 11, 8, 0.95) 100%),
+                        repeating-radial-gradient(circle at 50% 50%, #121814, #080b08 2px, #16201a 4px);
+            background-size: 100% 100%, 180% 180%;
+            z-index: 1;
+        }
+
+        .pepe-avatar-svg {
+            display: inline-block;
+            vertical-align: middle;
+            filter: drop-shadow(0 0 3px rgba(52, 211, 153, 0.4));
+        }
+
+        ::-webkit-scrollbar { width: 5px; }
+        ::-webkit-scrollbar-track { background: #080b08; }
+        ::-webkit-scrollbar-thumb { background: #1f2923; border-radius: 3px; }
+        ::-webkit-scrollbar-thumb:hover { background: #34d399; }
+    </style>
+</head>
+<body class="min-h-screen flex flex-col justify-between selection:bg-emerald-500 selection:text-black">
+
+    <!-- TOP NAVIGATION HEADER -->
+    <header class="border-b border-emerald-950/80 bg-vaultbg/90 backdrop-blur sticky top-0 z-50 px-4 py-2">
+        <div class="max-w-[1700px] mx-auto flex items-center justify-between gap-2">
+            
+            <div class="flex items-center gap-2.5">
+                <!-- Pepe Meme Frog Icon -->
+                <div class="w-10 h-10 rounded-lg bg-emerald-950/60 border border-emerald-700/60 flex items-center justify-center p-1 shadow">
+                    <svg class="pepe-avatar-svg w-8 h-8" viewBox="0 0 100 100" fill="none" xmlns="http://www.w3.org/2000/svg">
+                        <path d="M10,65 Q15,25 50,20 Q85,25 90,65 Q80,90 50,88 Q20,90 10,65 Z" fill="#48bb78" stroke="#1c4527" stroke-width="3"/>
+                        <path d="M25,68 Q50,82 75,68 Q50,75 25,68 Z" fill="#e53e3e" stroke="#742a2a" stroke-width="2"/>
+                        <polygon points="18,35 82,35 78,52 52,52 48,52 22,52" fill="#111827" stroke="#000000" stroke-width="3"/>
+                        <polygon points="20,37 47,37 45,50 22,50" fill="#1f2937"/>
+                        <polygon points="53,37 80,37 78,50 55,50" fill="#1f2937"/>
+                        <line x1="24" y1="39" x2="35" y2="48" stroke="#ffffff" stroke-width="2" opacity="0.6"/>
+                        <line x1="57" y1="39" x2="68" y2="48" stroke="#ffffff" stroke-width="2" opacity="0.6"/>
+                    </svg>
+                </div>
+                <div>
+                    <h1 class="font-header text-2xl font-extrabold leading-none tracking-wider text-vaultgreen uppercase flex items-center gap-2">
+                        BUNKER CONNECT <span class="text-xs font-mono-tech text-emerald-600 font-normal">v3.0</span>
+                    </h1>
+                    <span class="text-[10px] font-mono-tech text-purple-300 tracking-widest uppercase">VAULT-TEC SURVIVAL SYSTEM</span>
+                </div>
+            </div>
+
+            <!-- Controls Panel -->
+            <div id="navRoomControls" class="hidden flex items-center gap-2">
+                <button type="button" id="toggleCamBtn" class="bg-emerald-950/60 hover:bg-emerald-900 border border-emerald-800/80 text-vaultgreen text-xs px-3 py-1.5 rounded transition flex items-center gap-1.5 shadow">
+                    <i class="fa-solid fa-video"></i> Камера: <span id="camStatus" class="text-zinc-400 font-bold">ВИМК</span>
+                </button>
+                <button type="button" id="toggleMicBtn" class="bg-emerald-950/60 hover:bg-emerald-900 border border-emerald-800/80 text-vaultgreen text-xs px-3 py-1.5 rounded transition flex items-center gap-1.5 shadow">
+                    <i class="fa-solid fa-microphone"></i> Мік: <span id="micStatus" class="text-vaultgreen font-bold">УВІМК</span>
+                </button>
+
+                <div class="bg-zinc-950 border border-purple-500/40 px-3 py-1 rounded flex items-center gap-1.5 shadow">
+                    <span class="text-[10px] text-purple-300 font-mono-tech uppercase">Кімната:</span>
+                    <span id="displayRoomCode" class="font-mono-tech font-bold text-vaultgreen tracking-wider text-xs">------</span>
+                    <button type="button" id="copyRoomBtn" title="Скопіювати посилання" class="hover:text-vaultgreen text-purple-300 ml-1 text-xs transition">
+                        <i class="fa-regular fa-copy"></i>
+                    </button>
+                </div>
+
+                <button type="button" id="leaveRoomBtn" title="Вийти з гри" class="bg-red-950/60 hover:bg-red-900 border border-red-800 text-red-300 text-xs px-2.5 py-1.5 rounded transition">
+                    <i class="fa-solid fa-right-from-bracket"></i>
+                </button>
+            </div>
+        </div>
+    </header>
+
+    <!-- MAIN GAME CONTAINER -->
+    <main class="max-w-[1700px] mx-auto w-full p-2.5 md:p-4 flex-grow">
+
+        <!-- LOBBY SCREEN -->
+        <div id="lobbyScreen" class="max-w-md mx-auto my-8">
+            <div class="bg-vaultcard/95 p-6 rounded-xl border border-emerald-900/60 shadow-xl relative overflow-hidden backdrop-blur">
+                
+                <div class="text-center mb-6">
+                    <div class="inline-flex p-3 rounded-full bg-emerald-950 border border-emerald-700/60 mb-3 shadow">
+                        <svg class="w-12 h-12" viewBox="0 0 100 100" fill="none" xmlns="http://www.w3.org/2000/svg">
+                            <path d="M10,65 Q15,25 50,20 Q85,25 90,65 Q80,90 50,88 Q20,90 10,65 Z" fill="#48bb78" stroke="#1c4527" stroke-width="3"/>
+                            <path d="M25,68 Q50,82 75,68 Q50,75 25,68 Z" fill="#e53e3e" stroke="#742a2a" stroke-width="2"/>
+                            <polygon points="18,35 82,35 78,52 52,52 48,52 22,52" fill="#111827" stroke="#000000" stroke-width="3"/>
+                            <line x1="24" y1="39" x2="35" y2="48" stroke="#ffffff" stroke-width="2" opacity="0.6"/>
+                            <line x1="57" y1="39" x2="68" y2="48" stroke="#ffffff" stroke-width="2" opacity="0.6"/>
+                        </svg>
+                    </div>
+                    <h2 class="text-3xl font-bold uppercase tracking-wide text-vaultgreen font-header leading-tight">ВХІД У БУНКЕР</h2>
+                    <p class="text-xs font-mono-tech text-purple-300">Онлайн симулятор виживання з відеозв'язком</p>
+                </div>
+
+                <div class="space-y-4">
+                    <div>
+                        <label class="block text-xs font-mono-tech text-vaultgreen uppercase mb-1">Ваше Ім'я / Позивний</label>
+                        <input type="text" id="playerNameInput" placeholder="Наприклад: Buster" 
+                            class="w-full bg-zinc-950 border border-emerald-900 rounded p-2.5 text-sm text-vaultgreen focus:outline-none focus:border-vaultgreen transition">
+                    </div>
+
+                    <div class="pt-2 border-t border-emerald-950">
+                        <label class="block text-xs font-mono-tech text-purple-300 uppercase mb-1">Код кімнати (для приєднання)</label>
+                        <input type="text" id="roomCodeInput" placeholder="ВВЕДІТЬ КОД КІМНАТИ" 
+                            class="w-full bg-zinc-950 border border-purple-900/60 rounded p-2.5 text-sm text-purple-200 focus:outline-none focus:border-purple-500 uppercase font-mono tracking-wider">
+                    </div>
+
+                    <div class="grid grid-cols-2 gap-2.5 pt-2">
+                        <button type="button" id="joinRoomBtn" class="w-full bg-purple-950/80 hover:bg-purple-900 border border-purple-700/80 text-purple-200 font-semibold py-2.5 px-3 rounded transition text-xs shadow flex items-center justify-center gap-1">
+                            <i class="fa-solid fa-users"></i> Приєднатися
+                        </button>
+                        <button type="button" id="createRoomBtn" class="w-full bg-emerald-700 hover:bg-emerald-600 text-white font-bold py-2.5 px-3 rounded transition shadow text-xs flex items-center justify-center gap-1">
+                            <i class="fa-solid fa-plus-circle"></i> Створити Кімнату
+                        </button>
+                    </div>
+                </div>
+
+                <div id="lobbyError" class="mt-4 p-2.5 bg-red-950/80 border border-red-700 rounded text-red-300 text-xs hidden"></div>
+            </div>
+        </div>
+
+        <!-- GAME ROOM SCREEN -->
+        <div id="gameRoomScreen" class="hidden space-y-3">
+
+            <!-- CATASTROPHE BANNER -->
+            <div class="bg-vaultcard border border-emerald-900/60 rounded-lg p-3 font-mono-tech text-xs relative overflow-hidden shadow">
+                <div class="grid grid-cols-1 lg:grid-cols-12 gap-2 items-center">
+                    <div class="lg:col-span-8 border-b lg:border-b-0 lg:border-r border-emerald-950 pr-0 lg:pr-3 pb-2 lg:pb-0">
+                        <div class="flex items-center gap-2 mb-1">
+                            <span class="text-vaultgreen font-bold uppercase tracking-wider text-[11px]"><i class="fa-solid fa-shield-cat mr-1"></i>[ СЦЕНАРІЙ КАТАСТРОФИ ]</span>
+                            <span id="disasterTitle" class="text-purple-200 font-bold text-sm">--</span>
+                        </div>
+                        <p id="disasterDesc" class="text-[11px] text-zinc-300 leading-snug"></p>
+                    </div>
+
+                    <div class="lg:col-span-4 text-[11px] space-y-0.5 text-zinc-300">
+                        <div><span class="text-vaultgreen">БУНКЕР:</span> <span id="bunkerSpecs">--</span></div>
+                        <div><span class="text-vaultgreen">ПРОДОВОЛЬСТВО:</span> <span id="bunkerFood">--</span></div>
+                        <div><span class="text-vaultgreen">ОСНАЩЕННЯ:</span> <span id="bunkerEquipment">--</span></div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- ACTION BAR & VOTING PANEL -->
+            <div class="bg-vaultcard border border-purple-900/40 rounded-lg px-3 py-2 flex flex-wrap items-center justify-between gap-2 text-xs">
+                <div class="flex items-center gap-2">
+                    <span class="text-purple-300 font-mono-tech text-[11px]">Етап гри:</span>
+                    <span id="currentPhaseBadge" class="bg-purple-950/80 text-purple-200 border border-purple-500/50 px-2.5 py-0.5 rounded font-bold uppercase text-[11px]">
+                        Обговорення
+                    </span>
+                </div>
+
+                <!-- Host Control -->
+                <div id="hostControls" class="hidden flex items-center gap-2">
+                    <button type="button" id="nextPhaseBtn" class="bg-emerald-700 hover:bg-emerald-600 text-white font-bold text-xs uppercase px-3 py-1 rounded transition shadow">
+                        <i class="fa-solid fa-step-forward mr-1"></i> Підсумок голосування
+                    </button>
+                </div>
+
+                <!-- Live Voting dropdown -->
+                <div class="flex items-center gap-2">
+                    <span class="text-zinc-300 text-[11px]">Голосування:</span>
+                    <select id="voteTargetSelect" class="bg-zinc-950 border border-emerald-900 text-vaultgreen text-xs rounded px-2 py-1 focus:outline-none focus:border-vaultgreen">
+                        <option value="">-- Оберіть гравця --</option>
+                    </select>
+                    <button type="button" id="submitVoteBtn" class="bg-red-800 hover:bg-red-700 text-white font-bold text-xs px-3 py-1 rounded transition shadow">
+                        Віддати Голос
+                    </button>
+                </div>
+            </div>
+
+            <!-- CAMERA & CHARACTER CARDS GRID -->
+            <div id="cameraGrid" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-2.5">
+                <!-- Camera slots rendered dynamically -->
+            </div>
+
+            <!-- MY PRIVATE CHARACTER DASHBOARD (Secret Cards Control) -->
+            <div id="myDashboard" class="bg-vaultcard border border-emerald-900/60 rounded-lg p-3 text-xs space-y-2.5 mt-4">
+                <div class="flex items-center justify-between border-b border-emerald-900/60 pb-2">
+                    <div class="flex items-center gap-2">
+                        <i class="fa-solid fa-id-card text-vaultgreen text-lg"></i>
+                        <span class="font-bold text-vaultgreen uppercase font-header text-xl tracking-wide">Панель вашого персонажа (Бачите тільки ви)</span>
+                    </div>
+                    <span class="text-[10px] text-purple-300 font-mono-tech">Натисніть "Відкрити", щоб показати характеристику усім</span>
+                </div>
+
+                <div id="myPrivateTraitsGrid" class="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-8 gap-2">
+                    <!-- Dynamic private controls -->
+                </div>
+            </div>
+
+        </div>
+
+    </main>
+
+    <!-- FIREBASE & APPLICATION CODE -->
+    <script type="module">
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
+        import { getAuth, signInAnonymously, signInWithCustomToken, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
+        import { getFirestore, doc, getDoc, setDoc, updateDoc, onSnapshot } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
+
+        const appId = typeof __app_id !== 'undefined' ? __app_id : 'bunker-connect-game';
+        const firebaseConfig = typeof __firebase_config !== 'undefined' 
+            ? JSON.parse(__firebase_config)
+            : { apiKey: "demo", authDomain: "demo.firebaseapp.com", projectId: "demo" };
+
+        const app = initializeApp(firebaseConfig);
+        const auth = getAuth(app);
+        const db = getFirestore(app);
+
+        let currentUser = null;
+        let currentRoomId = null;
+        let roomUnsubscribe = null;
+        let roomData = null;
+
+        // WebRTC / Media state
+        let localStream = null;
+        let isCamOn = false;
+        let isMicOn = true;
+
+        // DATA POOLS FOR CHARACTER GENERATION
+        const PROFESSIONS = ["Хірург", "Інженер телекомунікацій", "Поліцейський", "Психолог", "Каскадер", "Кондитер", "Кулінар", "Військовий сапер", "Агроном", "Електрик", "Програміст", "Ветлікар", "Архітектор", "Викладач фізики"];
+        const HEALTH = ["Ідеально здоровий", "Язва шлунка (10%)", "Астма", "Короткозорість (-3)", "Безплідний", "Алергія на пил", "Легкий невроз", "Проблеми зі слухом", "Відмінна витривалість"];
+        const HOBBIES = ["Кулінарія", "Стрільба з лука", "В'язання", "Шахи", "Ремонт радіотехніки", "Гра на гітарі", "Ботаніка", "Картографія", "Бокс", "Алхімія"];
+        const PHOBIAS = ["Клаустрофобія", "Арахнофобія", "Агорафобія", "Темрява", "Гермофобія", "Гідрофобія", "Акрофобія (висота)", "Ніт фобія"];
+        const LUGGAGE = ["Набір для плетіння", "Акустична гітара", "Бінокль нічного бачення", "Лазерний рівень", "Армійська аптечка", "Фільтр для води", "Мультитул", "Рація", "Компас і карти", "Запас батарейок"];
+        const FACTS_POOL = [
+            "Знімався у фільмі", "Учився в Оксфорді", "Майстер спорту з плавання", "Вміє керувати гелікоптером",
+            "Знає де знаходиться Північ", "Служив у спецназі", "Володіє 4 мовами", "Вижив після блискавки",
+            "Вміє добувати вогонь без сірників", "Має диплом екстреного медика", "Вміє шифрувати повідомлення", "Знає хімію вибухівок"
+        ];
+        const ACTION_CARDS = [
+            { name: "Переголосування", desc: "Скасовує поточне голосування та запускає нове." },
+            { name: "Обмін багажем", desc: "Ви можете помінятися багажем із будь-яким гравцем." },
+            { name: "Імунітет", desc: "Вас не можна вигнати в цьому раунді." },
+            { name: "Скасування вигнання", desc: "Врятувати одного вигнаного гравця." },
+            { name: "Шпигунство", desc: "Подивитися 1 приховану карту іншого гравця." },
+            { name: "Зміна здоров'я", desc: "Отримати нове випадкове здоров'я з колоди." },
+            { name: "Додатковий голос", desc: "Ваш голос рахується за два у цьому раунді." },
+            { name: "Крадіжка факту", desc: "Забрати випадковий факт у іншого гравця." }
+        ];
+        const SCENARIOS = [
+            { 
+                title: "Проект «Стрела»", 
+                desc: "Військові відкрили розрив у паралельний вимір. Неостановимий туман заповнив поверхню. Видимість нульова. По світу блукають істоти.",
+                specs: "Тривалість: 6 місяців, Площа: 270 кв.м.",
+                food: "Сухі пайки на 6 місяців",
+                equip: "Теплиця 30м2, Радиорубка, Медитаційний блок"
+            },
+            {
+                title: "Ядерна Зима 2026",
+                desc: "Глобальний конфлікт спричинив затемнення атмосфери. Температура впала до -45°C. Радіація перевищує норму в 100 разів.",
+                specs: "Тривалість: 12 місяців, Площа: 320 кв.м.",
+                food: "Запас консервів та гідропоніка",
+                equip: "Дизель-генератор, фільтри води, закритий бункер"
+            }
+        ];
+
+        window.onload = async () => {
+            try {
+                if (typeof __initial_auth_token !== 'undefined' && __initial_auth_token) {
+                    await signInWithCustomToken(auth, __initial_auth_token);
+                } else {
+                    await signInAnonymously(auth);
+                }
+            } catch (err) {
+                console.error("Auth error:", err);
+            }
+
+            const savedName = localStorage.getItem('bunker_last_name');
+            if (savedName) document.getElementById('playerNameInput').value = savedName;
+
+            onAuthStateChanged(auth, (user) => {
+                currentUser = user;
+                checkAutoSession();
+            });
+
+            setupEventListeners();
+        };
+
+        function setupEventListeners() {
+            document.getElementById('createRoomBtn').addEventListener('click', (e) => { e.preventDefault(); createRoom(); });
+            document.getElementById('joinRoomBtn').addEventListener('click', (e) => { e.preventDefault(); joinRoom(); });
+            document.getElementById('copyRoomBtn').addEventListener('click', (e) => { e.preventDefault(); copyRoomLink(); });
+            document.getElementById('leaveRoomBtn').addEventListener('click', (e) => { e.preventDefault(); leaveRoom(); });
+            document.getElementById('toggleCamBtn').addEventListener('click', (e) => { e.preventDefault(); toggleCamera(); });
+            document.getElementById('toggleMicBtn').addEventListener('click', (e) => { e.preventDefault(); toggleMicrophone(); });
+            document.getElementById('nextPhaseBtn').addEventListener('click', (e) => { e.preventDefault(); nextPhase(); });
+            document.getElementById('submitVoteBtn').addEventListener('click', (e) => { e.preventDefault(); submitVote(); });
+        }
+
+        async function checkAutoSession() {
+            const urlParams = new URLSearchParams(window.location.search);
+            const urlRoom = urlParams.get('room');
+            const savedRoom = localStorage.getItem('bunker_last_room');
+
+            const roomToJoin = urlRoom || savedRoom;
+            if (roomToJoin) {
+                document.getElementById('roomCodeInput').value = roomToJoin.toUpperCase();
+                // Optionally auto-join if we have a name, but let's let user click join to be safe
+            }
+        }
+
+        function generateCode() {
+            return Math.random().toString(36).substring(2, 8).toUpperCase();
+        }
+
+        // STRICT PERSISTENCE LOGIC: Never overwrite existing character for this room
+        function getOrGenerateCharacter(roomCode, playerName, existingRoomData) {
+            const uid = currentUser ? currentUser.uid : 'guest';
+            
+            // 1. Check if we ALREADY exist in Firestore for this exact room
+            if (existingRoomData && existingRoomData.players && existingRoomData.players[uid]) {
+                const p = existingRoomData.players[uid];
+                p.name = playerName; // Update name just in case they changed it in the input
+                return p;
+            }
+
+            // 2. Check if we saved a profile in localStorage for THIS specific room
+            const localKey = `bunker_char_${roomCode}_${uid}`;
+            const savedChar = localStorage.getItem(localKey);
+            if (savedChar) {
+                try {
+                    const p = JSON.parse(savedChar);
+                    p.name = playerName;
+                    return p;
+                } catch(e) {}
+            }
+
+            // 3. Otherwise generate fresh! (With TWO Action Cards)
+            const shuffledFacts = [...FACTS_POOL].sort(() => 0.5 - Math.random());
+            const shuffledCards = [...ACTION_CARDS].sort(() => 0.5 - Math.random());
+
+            const newProfile = {
+                id: uid,
+                name: playerName,
+                age: Math.floor(Math.random() * 45) + 18,
+                gender: Math.random() > 0.5 ? 'М' : 'Ж',
+                profession: PROFESSIONS[Math.floor(Math.random() * PROFESSIONS.length)],
+                health: HEALTH[Math.floor(Math.random() * HEALTH.length)],
+                hobby: HOBBIES[Math.floor(Math.random() * HOBBIES.length)],
+                phobia: PHOBIAS[Math.floor(Math.random() * PHOBIAS.length)],
+                luggage: LUGGAGE[Math.floor(Math.random() * LUGGAGE.length)],
+                fact1: shuffledFacts[0],
+                fact2: shuffledFacts[1],
+                actionCard1: shuffledCards[0],
+                actionCard2: shuffledCards[1], // SECOND ACTION CARD!
+                hasCamera: false,
+                revealed: {
+                    profession: true, health: false, hobby: false, phobia: false, 
+                    luggage: false, fact1: false, fact2: false, 
+                    actionCard1: false, actionCard2: false
+                },
+                isExiled: false
+            };
+
+            localStorage.setItem(localKey, JSON.stringify(newProfile));
+            return newProfile;
+        }
+
+        async function createRoom() {
+            if (!currentUser) return showError('Очікування авторизації...');
+            const name = document.getElementById('playerNameInput').value.trim();
+            if (!name) return showError('Введіть ваше ім\'я!');
+
+            const code = generateCode();
+            localStorage.setItem('bunker_last_name', name);
+            localStorage.setItem('bunker_last_room', code);
+
+            const scenario = SCENARIOS[Math.floor(Math.random() * SCENARIOS.length)];
+            const player = getOrGenerateCharacter(code, name, null);
+
+            const roomRef = doc(db, 'artifacts', appId, 'public', 'data', 'rooms', code);
+            await setDoc(roomRef, {
+                code: code,
+                hostId: currentUser.uid,
+                scenario: scenario,
+                phase: 'Раунд 1: Знайомство та Професії',
+                players: { [currentUser.uid]: player },
+                votes: {},
+                createdAt: Date.now()
+            });
+
+            subscribeToRoom(code);
+        }
+
+        async function joinRoom() {
+            if (!currentUser) return showError('Очікування авторизації...');
+            const name = document.getElementById('playerNameInput').value.trim();
+            const code = document.getElementById('roomCodeInput').value.trim().toUpperCase();
+
+            if (!name) return showError('Введіть ім\'я!');
+            if (!code) return showError('Введіть код кімнати!');
+
+            localStorage.setItem('bunker_last_name', name);
+            localStorage.setItem('bunker_last_room', code);
+
+            const roomRef = doc(db, 'artifacts', appId, 'public', 'data', 'rooms', code);
+            const snapshot = await getDoc(roomRef);
+
+            if (!snapshot.exists()) return showError('Кімнату не знайдено!');
+
+            const rData = snapshot.data();
+            const player = getOrGenerateCharacter(code, name, rData);
+
+            await updateDoc(roomRef, {
+                [`players.${currentUser.uid}`]: player
+            });
+
+            subscribeToRoom(code);
+        }
+
+        function subscribeToRoom(code) {
+            currentRoomId = code;
+            const roomRef = doc(db, 'artifacts', appId, 'public', 'data', 'rooms', code);
+
+            if (roomUnsubscribe) roomUnsubscribe();
+
+            roomUnsubscribe = onSnapshot(roomRef, (snapshot) => {
+                if (!snapshot.exists()) return leaveRoom();
+                roomData = snapshot.data();
+                
+                // Keep local storage up to date with latest firestore data for persistence
+                if (currentUser && roomData.players[currentUser.uid]) {
+                    const localKey = `bunker_char_${code}_${currentUser.uid}`;
+                    localStorage.setItem(localKey, JSON.stringify(roomData.players[currentUser.uid]));
+                }
+                
+                renderGameUI();
+            });
+
+            document.getElementById('lobbyScreen').classList.add('hidden');
+            document.getElementById('gameRoomScreen').classList.remove('hidden');
+            document.getElementById('navRoomControls').classList.remove('hidden');
+            document.getElementById('displayRoomCode').innerText = code;
+            
+            // Re-attach camera if it was on
+            if(isCamOn) attachLocalStream();
+        }
+
+        async function toggleCamera() {
+            if (!isCamOn) {
+                try {
+                    localStream = await navigator.mediaDevices.getUserMedia({ video: true, audio: true });
+                    isCamOn = true;
+                    document.getElementById('camStatus').innerText = "УВІМК";
+                    document.getElementById('camStatus').className = "text-vaultgreen font-bold";
+                    syncCameraState(true);
+                    attachLocalStream();
+                } catch (err) {
+                    console.error("Camera access error:", err);
+                    alert("Не вдалося отримати доступ до камери. Перевірте дозволи браузера.");
+                }
+            } else {
+                if (localStream) {
+                    localStream.getTracks().forEach(track => track.stop());
+                }
+                isCamOn = false;
+                document.getElementById('camStatus').innerText = "ВИМК";
+                document.getElementById('camStatus').className = "text-zinc-400 font-bold";
+                syncCameraState(false);
+                renderGameUI(); // Re-render to show static noise
+            }
+        }
+
+        async function syncCameraState(state) {
+            if (currentRoomId && currentUser) {
+                const roomRef = doc(db, 'artifacts', appId, 'public', 'data', 'rooms', currentRoomId);
+                await updateDoc(roomRef, {
+                    [`players.${currentUser.uid}.hasCamera`]: state
+                });
+            }
+        }
+
+        function toggleMicrophone() {
+            if (localStream) {
+                const audioTrack = localStream.getAudioTracks()[0];
+                if (audioTrack) {
+                    audioTrack.enabled = !audioTrack.enabled;
+                    isMicOn = audioTrack.enabled;
+                    document.getElementById('micStatus').innerText = isMicOn ? "УВІМК" : "ВИМК";
+                    document.getElementById('micStatus').className = isMicOn ? "text-vaultgreen font-bold" : "text-red-400 font-bold";
+                }
+            }
+        }
+
+        function attachLocalStream() {
+            if(!currentUser) return;
+            const localVidElem = document.getElementById(`video-${currentUser.uid}`);
+            if (localVidElem && localStream) {
+                localVidElem.srcObject = localStream;
+                localVidElem.play().catch(e => console.log("Video play error:", e));
+            }
+        }
+
+        function renderGameUI() {
+            if (!roomData) return;
+
+            document.getElementById('disasterTitle').innerText = roomData.scenario.title;
+            document.getElementById('disasterDesc').innerText = roomData.scenario.desc;
+            document.getElementById('bunkerSpecs').innerText = roomData.scenario.specs;
+            document.getElementById('bunkerFood').innerText = roomData.scenario.food;
+            document.getElementById('bunkerEquipment').innerText = roomData.scenario.equip;
+            document.getElementById('currentPhaseBadge').innerText = roomData.phase;
+
+            if (currentUser && roomData.hostId === currentUser.uid) {
+                document.getElementById('hostControls').classList.remove('hidden');
+            } else {
+                document.getElementById('hostControls').classList.add('hidden');
+            }
+
+            const players = Object.values(roomData.players || {});
+            const grid = document.getElementById('cameraGrid');
+            grid.innerHTML = '';
+
+            const voteSelect = document.getElementById('voteTargetSelect');
+            voteSelect.innerHTML = '<option value="">-- Оберіть гравця --</option>';
+
+            players.forEach((player, idx) => {
+                const isMe = currentUser && player.id === currentUser.uid;
+
+                if (!isMe && !player.isExiled) {
+                    const opt = document.createElement('option');
+                    opt.value = player.id;
+                    opt.innerText = `${idx + 1}) ${player.name}`;
+                    voteSelect.appendChild(opt);
+                }
+
+                const slot = document.createElement('div');
+                slot.className = `camera-slot-frame ${player.isExiled ? 'grayscale opacity-60 border-red-800' : ''}`;
+
+                let slotHTML = `
+                    ${player.isExiled ? '<div class="exiled-stamp">ВИГНАНИЙ</div>' : ''}
+                    
+                    ${isMe && isCamOn ? `
+                        <video id="video-${player.id}" class="camera-video" autoplay playsinline muted></video>
+                    ` : `
+                        <div class="static-noise flex flex-col items-center justify-center text-emerald-800">
+                            <svg class="w-10 h-10 mb-1 opacity-70" viewBox="0 0 100 100" fill="none" xmlns="http://www.w3.org/2000/svg">
+                                <path d="M10,65 Q15,25 50,20 Q85,25 90,65 Q80,90 50,88 Q20,90 10,65 Z" fill="#48bb78" stroke="#1c4527" stroke-width="3"/>
+                                <polygon points="18,35 82,35 78,52 52,52 48,52 22,52" fill="#111827"/>
+                            </svg>
+                            <span class="text-[10px] font-mono-tech uppercase text-emerald-500/70">Камера вимкнена</span>
+                        </div>
+                    `}
+
+                    <!-- TOP OVERLAY -->
+                    <div class="hud-top-clean font-mono-tech">
+                        <div class="flex items-center gap-1">
+                            <span class="bg-emerald-600 text-black font-extrabold px-1.5 py-0.2 rounded text-[10px] shadow">${idx + 1}</span>
+                            <span class="hud-text-glow text-xs truncate max-w-[120px]">${player.name}</span>
+                        </div>
+                        <span class="hud-text-glow text-[11px]">${player.gender} ${player.age}р</span>
+                    </div>
+
+                    <!-- BOTTOM OVERLAY -->
+                    <div class="hud-bottom-clean font-mono-tech space-y-0.5">
+                        <div class="hud-text-glow text-xs truncate uppercase">${player.profession}</div>
+                        ${renderHudLine('Зд', player.health, player.revealed?.health)}
+                        ${renderHudLine('Хоб', player.hobby, player.revealed?.hobby)}
+                        ${renderHudLine('Фоб', player.phobia, player.revealed?.phobia)}
+                        ${renderHudLine('Баг', player.luggage, player.revealed?.luggage)}
+                        ${renderHudLine('Фкт1', player.fact1, player.revealed?.fact1)}
+                        ${renderHudLine('Фкт2', player.fact2, player.revealed?.fact2)}
+                        ${player.revealed?.actionCard1 ? `<div class="hud-text-purple text-[10px] truncate"><i class="fa-solid fa-bolt mr-1"></i>ДІЯ 1: ${player.actionCard1?.name}</div>` : ''}
+                        ${player.revealed?.actionCard2 ? `<div class="hud-text-purple text-[10px] truncate"><i class="fa-solid fa-bolt mr-1"></i>ДІЯ 2: ${player.actionCard2?.name}</div>` : ''}
+                    </div>
+                `;
+
+                slot.innerHTML = slotHTML;
+                grid.appendChild(slot);
+
+                if (isMe && isCamOn) {
+                    setTimeout(attachLocalStream, 50);
+                }
+            });
+
+            renderMyDashboard();
+        }
+
+        function renderHudLine(shortTag, val, isRevealed) {
+            if (isRevealed) {
+                return `<div class="hud-text-white text-[10.5px] truncate"><span class="hud-text-glow">${shortTag}:</span> ${val}</div>`;
+            }
+            return `<div class="hud-text-hidden text-[9.5px] truncate"><span class="hud-text-hidden">${shortTag}:</span> [ Приховано ]</div>`;
+        }
+
+        function renderMyDashboard() {
+            if (!currentUser || !roomData || !roomData.players) return;
+
+            const myPlayer = roomData.players[currentUser.uid];
+            if (!myPlayer) return;
+
+            const grid = document.getElementById('myPrivateTraitsGrid');
+            grid.innerHTML = '';
+
+            const traits = [
+                { key: 'health', label: "Здоров'я", val: myPlayer.health, icon: 'fa-heart-pulse' },
+                { key: 'hobby', label: 'Хобі', val: myPlayer.hobby, icon: 'fa-chess' },
+                { key: 'phobia', label: 'Фобія', val: myPlayer.phobia, icon: 'fa-ghost' },
+                { key: 'luggage', label: 'Багаж', val: myPlayer.luggage, icon: 'fa-suitcase' },
+                { key: 'fact1', label: 'Факт 1', val: myPlayer.fact1, icon: 'fa-lightbulb' },
+                { key: 'fact2', label: 'Факт 2', val: myPlayer.fact2, icon: 'fa-lightbulb' },
+                { key: 'actionCard1', label: 'Карта Дії 1', val: `${myPlayer.actionCard1?.name}: ${myPlayer.actionCard1?.desc}`, icon: 'fa-bolt' },
+                { key: 'actionCard2', label: 'Карта Дії 2', val: `${myPlayer.actionCard2?.name}: ${myPlayer.actionCard2?.desc}`, icon: 'fa-bolt' }
+            ];
+
+            traits.forEach(t => {
+                const isRev = myPlayer.revealed?.[t.key];
+                const card = document.createElement('div');
+                card.className = `p-2 rounded border text-[11px] flex flex-col justify-between ${isRev ? 'bg-emerald-950/40 border-emerald-700/60 shadow' : 'bg-zinc-950 border-emerald-950'}`;
+
+                card.innerHTML = `
+                    <div>
+                        <div class="flex items-center justify-between text-zinc-400 mb-1">
+                            <span class="font-mono-tech font-bold uppercase text-[10px] text-vaultgreen"><i class="fa-solid ${t.icon} mr-1"></i>${t.label}</span>
+                            <span class="text-[9px] ${isRev ? 'text-vaultgreen font-bold' : 'text-zinc-500'}">${isRev ? 'ВІДКРИТО' : 'СЕКРЕТ'}</span>
+                        </div>
+                        <div class="text-zinc-200 font-medium leading-tight mb-2 text-[11px]">${t.val}</div>
+                    </div>
+                    <button type="button" data-key="${t.key}" class="reveal-btn-dash w-full py-1 text-[10px] font-bold rounded transition ${isRev ? 'bg-zinc-800 text-zinc-400 hover:bg-zinc-700' : 'bg-emerald-700 hover:bg-emerald-600 text-white shadow'}">
+                        ${isRev ? 'Сховати' : 'Відкрити всім'}
+                    </button>
+                `;
+
+                grid.appendChild(card);
+            });
+
+            grid.querySelectorAll('.reveal-btn-dash').forEach(btn => {
+                btn.addEventListener('click', (e) => {
+                    e.preventDefault();
+                    const key = e.currentTarget.dataset.key;
+                    toggleRevealTrait(key);
+                });
+            });
+        }
+
+        async function toggleRevealTrait(traitKey) {
+            if (!currentRoomId || !currentUser || !roomData) return;
+            const currentVal = roomData.players[currentUser.uid]?.revealed?.[traitKey] || false;
+            const roomRef = doc(db, 'artifacts', appId, 'public', 'data', 'rooms', currentRoomId);
+
+            await updateDoc(roomRef, {
+                [`players.${currentUser.uid}.revealed.${traitKey}`]: !currentVal
+            });
+        }
+
+        async function submitVote() {
+            const targetId = document.getElementById('voteTargetSelect').value;
+            if (!targetId) return alert('Оберіть гравця!');
+
+            const roomRef = doc(db, 'artifacts', appId, 'public', 'data', 'rooms', currentRoomId);
+            await updateDoc(roomRef, {
+                [`votes.${currentUser.uid}`]: targetId
+            });
+
+            alert('Ваш голос віддано!');
+        }
+
+        async function nextPhase() {
+            if (!currentRoomId || !roomData) return;
+
+            const votes = roomData.votes || {};
+            const voteCounts = {};
+
+            Object.values(votes).forEach(targetId => {
+                voteCounts[targetId] = (voteCounts[targetId] || 0) + 1;
+            });
+
+            let maxVotes = 0;
+            let exiledId = null;
+
+            for (const [id, count] of Object.entries(voteCounts)) {
+                if (count > maxVotes) {
+                    maxVotes = count;
+                    exiledId = id;
+                }
+            }
+
+            const roomRef = doc(db, 'artifacts', appId, 'public', 'data', 'rooms', currentRoomId);
+
+            if (exiledId && maxVotes > 0) {
+                await updateDoc(roomRef, {
+                    [`players.${exiledId}.isExiled`]: true,
+                    votes: {},
+                    phase: 'Завершено раунд (Гравець вигнаний)'
+                });
+            } else {
+                await updateDoc(roomRef, {
+                    votes: {},
+                    phase: 'Раунд Обговорення & Голосування'
+                });
+            }
+        }
+
+        function copyRoomLink() {
+            const url = `${window.location.origin}${window.location.pathname}?room=${currentRoomId}`;
+            navigator.clipboard.writeText(url).then(() => {
+                alert('Посилання на кімнату скопійовано! Надішліть його друзям.');
+            }).catch(() => {
+                alert(`Код вашої кімнати: ${currentRoomId}`);
+            });
+        }
+
+        function leaveRoom() {
+            if (localStream) {
+                localStream.getTracks().forEach(track => track.stop());
+                isCamOn = false;
+            }
+            if (roomUnsubscribe) roomUnsubscribe();
+            currentRoomId = null;
+            roomData = null;
+
+            document.getElementById('gameRoomScreen').classList.add('hidden');
+            document.getElementById('navRoomControls').classList.add('hidden');
+            document.getElementById('lobbyScreen').classList.remove('hidden');
+        }
+
+        function showError(msg) {
+            const errBox = document.getElementById('lobbyError');
+            errBox.innerText = msg;
+            errBox.classList.remove('hidden');
+            setTimeout(() => errBox.classList.add('hidden'), 4000);
+        }
+    </script>
+</body>
+</html>
