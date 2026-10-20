@@ -57,8 +57,8 @@
         }
 
         .pepe-avatar {
-            width: 42px;
-            height: 42px;
+            width: 44px;
+            height: 44px;
             border-radius: 50%;
             border: 2px solid var(--accent-green);
             background: #111;
@@ -132,6 +132,20 @@
             color: #fff;
         }
 
+        .btn-small {
+            padding: 6px 12px;
+            font-size: 0.8rem;
+            width: auto;
+            margin-top: 6px;
+        }
+
+        .btn-disabled {
+            background: #333 !important;
+            border-color: #555 !important;
+            color: #777 !important;
+            cursor: not-allowed;
+        }
+
         .game-layout {
             display: none;
             flex-direction: column;
@@ -149,6 +163,16 @@
             border-radius: 4px;
             font-size: 0.95rem;
             line-height: 1.4;
+        }
+
+        .action-log {
+            background: rgba(0,0,0,0.4);
+            border: 1px solid var(--border-color);
+            padding: 8px 12px;
+            border-radius: 4px;
+            color: var(--text-gold);
+            font-size: 0.85rem;
+            min-height: 28px;
         }
 
         .video-grid {
@@ -270,7 +294,7 @@
             border: 2px solid var(--accent-purple);
             padding: 24px;
             border-radius: 8px;
-            max-width: 500px;
+            max-width: 520px;
             width: 90%;
         }
 
@@ -280,6 +304,9 @@
             padding: 12px;
             margin: 10px 0;
             border-radius: 4px;
+            display: flex;
+            flex-direction: column;
+            gap: 6px;
         }
     </style>
 </head>
@@ -287,7 +314,8 @@
 
     <header>
         <div class="brand-logo">
-            <img src="https://i.imgur.com/8Q9Z5YK.png" alt="Pepe" class="pepe-avatar" onerror="this.src='https://wiki.pepe.gay/images/pepe/Pepe_Hands.png'">
+            <!-- Оновлена аватарка Pepe в окулярах -->
+            <img src="https://i.imgur.com/8Q9Z5YK.png" alt="Pepe" class="pepe-avatar" onerror="this.src='https://i.ibb.co/C03H42Y/pepe.png'">
             <span>BUNKER CONNECT</span>
         </div>
         <div id="room-info" style="color: var(--text-gold);">Кімната: Непідключено</div>
@@ -312,10 +340,14 @@
             Завантаження сценарію катастрофи...
         </div>
 
+        <div class="action-log" id="action-log-box">
+            <i class="fa-solid fa-bullhorn"></i> Лог дій: Очікування ходу гравців...
+        </div>
+
         <div class="my-controls">
             <div>
                 <button class="btn" style="width: auto;" onclick="toggleCamera()"><i class="fa-solid fa-video"></i> Увімкнути Камеру</button>
-                <button class="btn btn-purple" style="width: auto;" onclick="openActionModal()"><i class="fa-solid fa-id-card"></i> Мої Карти Дії (2)</button>
+                <button class="btn btn-purple" style="width: auto;" onclick="openActionModal()"><i class="fa-solid fa-id-card"></i> Мої Карти Дії (<span id="cards-count">2</span>)</button>
             </div>
             <div class="trait-buttons" id="reveal-buttons-panel"></div>
         </div>
@@ -354,11 +386,11 @@
             "У дитинстві пройшов курс скаутів"
         ];
         const ACTION_CARDS = [
-            { title: "Переголосування", desc: "Скасовує підсумки голосування поточного раунду." },
-            { title: "Обмін багажем", desc: "Обміняйтеся багажем з будь-яким вибраним гравцем." },
-            { title: "Крадіжка", desc: "Заберіть багаж у будь-якого гравця." },
-            { title: "Імунітет", desc: "Вас не можна вигнати в цьому раунді." },
-            { title: "Лікування", desc: "Повністю вилікуйте свою карту здоров'я." }
+            { id: "act_1", title: "Переголосування", desc: "Анулює підсумки поточного голосування і запускає його наново." },
+            { id: "act_2", title: "Обмін багажем", desc: "Поміняйтеся багажем з будь-яким вибраним гравцем." },
+            { id: "act_3", title: "Крадіжка багажу", desc: "Заберіть багаж іншого гравця собі." },
+            { id: "act_4", title: "Імунітет від вигнання", desc: "Дає повний захист від вигнання у цьому раунді." },
+            { id: "act_5", title: "Чудодійне лікування", desc: "Повністю змінює вашу карту здоров'я на «Ідеально здоровий»." }
         ];
 
         function getRandomTwoFacts() {
@@ -368,7 +400,10 @@
 
         function getRandomActionCards() {
             let shuffled = [...ACTION_CARDS].sort(() => 0.5 - Math.random());
-            return [shuffled[0], shuffled[1]];
+            return [
+                { ...shuffled[0], used: false },
+                { ...shuffled[1], used: false }
+            ];
         }
 
         function generateOrLoadProfile() {
@@ -425,8 +460,14 @@
                 <strong>БУНКЕР:</strong> Розрахований на 4 особи. Обладнаний гідропонікою та фільтрами води.
             `;
 
+            updateCardsCount();
             renderRevealButtons();
             renderMyCard();
+        }
+
+        function updateCardsCount() {
+            let unused = myProfile.actions.filter(a => !a.used).length;
+            document.getElementById("cards-count").innerText = unused;
         }
 
         function renderRevealButtons() {
@@ -456,6 +497,31 @@
             sessionStorage.setItem("bunker_char_" + currentRoom, JSON.stringify(myProfile));
             renderRevealButtons();
             renderMyCard();
+        }
+
+        function useActionCard(index) {
+            let card = myProfile.actions[index];
+            if (card.used) return;
+
+            if (confirm(`Ви дійсно хочете використати карту "${card.title}"?`)) {
+                card.used = true;
+                
+                // Спеціальний ефект для карти лікування
+                if (card.title === "Чудодійне лікування") {
+                    myProfile.health = "Ідеально здоровий";
+                }
+
+                sessionStorage.setItem("bunker_char_" + currentRoom, JSON.stringify(myProfile));
+                
+                document.getElementById("action-log-box").innerHTML = `
+                    <i class="fa-solid fa-bolt" style="color: var(--accent-purple);"></i> 
+                    <strong>${currentUsername}</strong> використав карту дії: <span style="color: #fff;">«${card.title}»</span>!
+                `;
+
+                updateCardsCount();
+                openActionModal();
+                renderMyCard();
+            }
         }
 
         function renderMyCard() {
@@ -516,11 +582,15 @@
         function openActionModal() {
             let container = document.getElementById("action-cards-list");
             container.innerHTML = "";
-            myProfile.actions.forEach((card) => {
+            myProfile.actions.forEach((card, idx) => {
                 container.innerHTML += `
                     <div class="action-card">
                         <strong style="color: var(--text-gold);">${card.title}</strong>
-                        <p style="font-size: 0.85rem; margin-top: 4px;">${card.desc}</p>
+                        <p style="font-size: 0.85rem;">${card.desc}</p>
+                        <button class="btn btn-purple btn-small ${card.used ? 'btn-disabled' : ''}" 
+                                onclick="useActionCard(${idx})" ${card.used ? 'disabled' : ''}>
+                            ${card.used ? 'Використано ✓' : 'Використати карточку'}
+                        </button>
                     </div>
                 `;
             });
