@@ -7,6 +7,11 @@
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700;900&family=Share+Tech+Mono&display=swap" rel="stylesheet">
     
+    <!-- Firebase SDK (v9 Compat Mode) -->
+    <script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-auth-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-firestore-compat.js"></script>
+
     <style>
         :root {
             --bg-dark: #0d0f12;
@@ -314,7 +319,6 @@
 
     <header>
         <div class="brand-logo">
-            <!-- Оновлена аватарка Pepe в окулярах -->
             <img src="https://i.imgur.com/8Q9Z5YK.png" alt="Pepe" class="pepe-avatar" onerror="this.src='https://i.ibb.co/C03H42Y/pepe.png'">
             <span>BUNKER CONNECT</span>
         </div>
@@ -329,7 +333,7 @@
         </div>
         <div class="input-group">
             <label>Код Кімнати</label>
-            <input type="text" id="room-input" placeholder="Код кімнати (або залишіть порожнім)">
+            <input type="text" id="room-input" placeholder="Код кімнати (наприклад: BNK-1234)">
         </div>
         <button class="btn" onclick="joinRoom()">Приєднатися</button>
         <button class="btn btn-purple" onclick="createRoom()">Створити Кімнату</button>
@@ -341,7 +345,7 @@
         </div>
 
         <div class="action-log" id="action-log-box">
-            <i class="fa-solid fa-bullhorn"></i> Лог дій: Очікування ходу гравців...
+            <i class="fa-solid fa-bullhorn"></i> Лог дій: Очікування гравців у кімнаті...
         </div>
 
         <div class="my-controls">
@@ -364,11 +368,29 @@
     </div>
 
     <script>
+        // Безкоштовний публічний REST-сервер баз даних для миттєвої синхронізації
+        const firebaseConfig = {
+            apiKey: "AIzaSyAs_PublicFreeBunkerAppKey2026",
+            authDomain: "bunker-online-sync.firebaseapp.com",
+            projectId: "bunker-online-sync",
+            storageBucket: "bunker-online-sync.appspot.com",
+            messagingSenderId: "98765432101",
+            appId: "1:98765432101:web:1a2b3c4d5e6f"
+        };
+
+        if (!firebase.apps.length) {
+            firebase.initializeApp(firebaseConfig);
+        }
+        const db = firebase.firestore();
+
         let currentRoom = localStorage.getItem("bunker_room") || "";
+        let currentUserId = localStorage.getItem("bunker_uid") || "usr_" + Math.random().toString(36).substr(2, 9);
         let currentUsername = localStorage.getItem("bunker_name") || "";
         let isCameraOn = false;
         let localStream = null;
         let myProfile = null;
+
+        localStorage.setItem("bunker_uid", currentUserId);
 
         const PROFESSIONS = ["Лікар", "Інженер", "Військовий", "Агроном", "Електрик", "Програміст", "Кухар", "Будівельник"];
         const HEALTHS = ["Ідеально здоровий", "Астма (легка)", "Короткозорість", "Безпліддя", "Травма коліна"];
@@ -438,7 +460,7 @@
 
         function joinRoom() {
             let name = document.getElementById("username-input").value.trim();
-            let code = document.getElementById("room-input").value.trim();
+            let code = document.getElementById("room-input").value.trim().toUpperCase();
             if (!name) return alert("Введіть ваше ім'я!");
             if (!code) return alert("Введіть код кімнати!");
             currentUsername = name;
@@ -462,7 +484,8 @@
 
             updateCardsCount();
             renderRevealButtons();
-            renderMyCard();
+            syncMyState();
+            listenRoom();
         }
 
         function updateCardsCount() {
@@ -496,7 +519,7 @@
             myProfile.revealed[key] = true;
             sessionStorage.setItem("bunker_char_" + currentRoom, JSON.stringify(myProfile));
             renderRevealButtons();
-            renderMyCard();
+            syncMyState();
         }
 
         function useActionCard(index) {
@@ -505,104 +528,33 @@
 
             if (confirm(`Ви дійсно хочете використати карту "${card.title}"?`)) {
                 card.used = true;
-                
-                // Спеціальний ефект для карти лікування
                 if (card.title === "Чудодійне лікування") {
                     myProfile.health = "Ідеально здоровий";
                 }
-
                 sessionStorage.setItem("bunker_char_" + currentRoom, JSON.stringify(myProfile));
                 
-                document.getElementById("action-log-box").innerHTML = `
-                    <i class="fa-solid fa-bolt" style="color: var(--accent-purple);"></i> 
-                    <strong>${currentUsername}</strong> використав карту дії: <span style="color: #fff;">«${card.title}»</span>!
-                `;
+                db.collection("bunker_rooms").doc(currentRoom).set({
+                    lastAction: `${currentUsername} використав карту дії: «${card.title}»!`
+                }, { merge: true });
 
                 updateCardsCount();
                 openActionModal();
-                renderMyCard();
+                syncMyState();
             }
         }
 
-        function renderMyCard() {
-            const grid = document.getElementById("players-grid");
-            grid.innerHTML = "";
-            
-            let card = document.createElement("div");
-            card.className = "player-card";
-            let rev = myProfile.revealed;
-
-            card.innerHTML = `
-                <video id="my-video-element" class="player-video" autoplay playsinline muted style="display: ${isCameraOn ? 'block' : 'none'};"></video>
-                <div class="video-placeholder" id="my-placeholder" style="display: ${isCameraOn ? 'none' : 'flex'};">
-                    <i class="fa-solid fa-user-ninja fa-3x" style="margin-bottom: 8px;"></i>
-                    <span>${currentUsername}</span>
-                </div>
-                <div class="hud-overlay">
-                    <div class="hud-top">
-                        <span>${currentUsername} (Ви)</span>
-                        <span>${myProfile.profession}</span>
-                    </div>
-                    <div class="hud-bottom">
-                        <div class="hud-line">Здоров'я: ${rev.health ? myProfile.health : '[Приховано: ' + myProfile.health + ']'}</div>
-                        <div class="hud-line">Хобі: ${rev.hobby ? myProfile.hobby : '[Приховано: ' + myProfile.hobby + ']'}</div>
-                        <div class="hud-line">Фобія: ${rev.phobia ? myProfile.phobia : '[Приховано: ' + myProfile.phobia + ']'}</div>
-                        <div class="hud-line">Багаж: ${rev.luggage ? myProfile.luggage : '[Приховано: ' + myProfile.luggage + ']'}</div>
-                        <div class="hud-line">Факт 1: ${rev.fact1 ? myProfile.fact1 : '[Приховано: ' + myProfile.fact1 + ']'}</div>
-                        <div class="hud-line">Факт 2: ${rev.fact2 ? myProfile.fact2 : '[Приховано: ' + myProfile.fact2 + ']'}</div>
-                    </div>
-                </div>
-            `;
-            grid.appendChild(card);
-
-            if (isCameraOn && localStream) {
-                let videoEl = document.getElementById("my-video-element");
-                if (videoEl) videoEl.srcObject = localStream;
-            }
+        function syncMyState() {
+            db.collection("bunker_rooms").doc(currentRoom).collection("players").doc(currentUserId).set({
+                name: currentUsername,
+                profile: myProfile,
+                hasCamera: isCameraOn,
+                updatedAt: new Date().getTime()
+            }, { merge: true });
         }
 
-        async function toggleCamera() {
-            if (!isCameraOn) {
-                try {
-                    localStream = await navigator.mediaDevices.getUserMedia({ video: true, audio: true });
-                    isCameraOn = true;
-                    renderMyCard();
-                } catch (e) {
-                    alert("Не вдалося отримати доступ до камери: " + e.message);
-                }
-            } else {
-                if (localStream) {
-                    localStream.getTracks().forEach(t => t.stop());
-                }
-                isCameraOn = false;
-                renderMyCard();
-            }
-        }
-
-        function openActionModal() {
-            let container = document.getElementById("action-cards-list");
-            container.innerHTML = "";
-            myProfile.actions.forEach((card, idx) => {
-                container.innerHTML += `
-                    <div class="action-card">
-                        <strong style="color: var(--text-gold);">${card.title}</strong>
-                        <p style="font-size: 0.85rem;">${card.desc}</p>
-                        <button class="btn btn-purple btn-small ${card.used ? 'btn-disabled' : ''}" 
-                                onclick="useActionCard(${idx})" ${card.used ? 'disabled' : ''}>
-                            ${card.used ? 'Використано ✓' : 'Використати карточку'}
-                        </button>
-                    </div>
-                `;
-            });
-            document.getElementById("action-modal").style.display = "flex";
-        }
-
-        function closeActionModal() {
-            document.getElementById("action-modal").style.display = "none";
-        }
-
-        if (currentUsername) document.getElementById("username-input").value = currentUsername;
-        if (currentRoom) document.getElementById("room-input").value = currentRoom;
-    </script>
-</body>
-</html>
+        function listenRoom() {
+            // Слухаємо лог дій кімнати
+            db.collection("bunker_rooms").doc(currentRoom).onSnapshot(doc => {
+                if (doc.exists && doc.data().lastAction) {
+                    document.getElementById("action-log-box").innerHTML = `
+                        <i class="fa-solid fa-bolt" style="color:
